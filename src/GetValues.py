@@ -1,20 +1,9 @@
 # Price Manager
-import json
-import datetime
 import urllib.request
+import json
+import crypto_functions
 
 
-
-def write_dictionary_as_json_file(filename, dictionary):
-    dictionary['timestamp'] = datetime.datetime.now().isoformat()
-    with open('../data/' + filename, 'w') as f:
-        f.write(json.dumps(dictionary, indent=4))
-
-def add_result(crypto_data, coin, balance, price):
-    crypto_data['balances'][coin] = balance
-    crypto_data['prices'][coin] = price
-    crypto_data['values'][coin] = price * balance
-    return crypto_data
 
 
 crypto_data = {'balances': {}, 'prices': {}, 'values': {}}
@@ -35,7 +24,7 @@ display_ccy = cmc_config['display_ccy']
 for coin, balance in simple_balances['crypto'].items():
     cmc_id = coin_config[coin]['coinmarketcap_id']
     url = cmc_config['url'] + cmc_id + '?convert=' + display_ccy
-    crypto_data = add_result(crypto_data, coin, balance, float(json.loads(urllib.request.urlopen(url).read())[0]['price_' + display_ccy.lower()]))
+    crypto_data = crypto_functions.add_result(crypto_data, coin, balance, float(json.loads(urllib.request.urlopen(url).read())[0]['price_' + display_ccy.lower()]))
 
 
 # get fiat prices from fixer.io
@@ -45,9 +34,9 @@ fxrates = json.loads(urllib.request.urlopen(url).read())
 
 for coin, balance in simple_balances['fiat'].items():
     if coin == base_ccy:
-        crypto_data = add_result(crypto_data, coin, balance, 1)
+        crypto_data = crypto_functions.add_result(crypto_data, coin, balance, 1)
     else:
-        crypto_data = add_result(crypto_data, coin, balance, 1 / fxrates['rates'][coin])
+        crypto_data = crypto_functions.add_result(crypto_data, coin, balance, 1 / fxrates['rates'][coin])
 
 
 
@@ -56,7 +45,7 @@ iconomi_config = config['api_config']['iconomi_blx']
 usdrate = fxrates['rates']['USD']
 for coin, balance in simple_balances['iconomi_fund'].items():
     price_usd = float(json.loads(urllib.request.urlopen(iconomi_config['url']+coin+'-chart').read())['chartData'].pop()['y']['tokenPrice'])
-    crypto_data = add_result(crypto_data, coin, balance, price_usd / usdrate)
+    crypto_data = crypto_functions.add_result(crypto_data, coin, balance, price_usd / usdrate)
 
 
 values = [crypto_data['values'][x] for x in crypto_data['values']]
@@ -64,5 +53,5 @@ total = '{:0,.2f}'.format(sum(values))
 print('£' + total)
 crypto_data['total_value'] = total
 crypto_data['display_ccy'] = display_ccy
-write_dictionary_as_json_file('crypto_values.json', crypto_data)
+crypto_functions.write_dictionary_as_json_file('crypto_values.json', crypto_data)
 
