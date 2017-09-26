@@ -17,8 +17,8 @@ crypto_values = crypto_data['values']
 
 # config
 config = json.loads(open('../config/config.json').read())
-crypto_balances = json.loads(open('crypto_balances.json').read())['coins']
-simple_balances = json.loads(open('crypto_balances_aggregated.json').read())['coins']
+crypto_balances = json.loads(open('../data/crypto_balances.json').read())['coins']
+simple_balances = json.loads(open('../data/crypto_balances_aggregated.json').read())['coins']
 
 
 
