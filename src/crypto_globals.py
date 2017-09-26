@@ -1,15 +1,22 @@
 import json
 import datetime
 
-def add_balance(balances_dict, coin, balance, description):
-    if balances_dict['coins'].get(coin) is None:
-        balances_dict['coins'][coin] = {'balances': []}
+#Define global variables
+config = json.loads(open('../config/config.json').read())
+coin_config = config['coins']
 
-    balances_dict['coins'][coin]['balances'].append({'balance': balance, 'description': description})
-    return balances_dict
+crypto_balances = {'coins': config["starting_balances"]}
+
+def add_balance(coin, balance, description):
+    global crypto_balances
+    if crypto_balances['coins'].get(coin) is None:
+        crypto_balances['coins'][coin] = {'balances': []}
+
+    crypto_balances['coins'][coin]['balances'].append({'balance': balance, 'description': description})
 
 
-def simplify_balances(coin_config, crypto_balances):
+
+def simplify_balances():
     simple_balances = {'coins': {"crypto": {}, "fiat": {}, "iconomi_fund": {}}}
 
     for coin, balances in crypto_balances['coins'].items():

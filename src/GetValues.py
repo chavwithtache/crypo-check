@@ -1,7 +1,7 @@
 # Price Manager
 import json
 import urllib.request
-import crypto_functions
+import crypto_globals
 
 crypto_data = {'balances': {}, 'prices': {}, 'values': {}}
 
@@ -18,7 +18,7 @@ display_ccy = cmc_config['display_ccy']
 for coin, balance in simple_balances['crypto'].items():
     cmc_id = coin_config[coin]['coinmarketcap_id']
     url = cmc_config['url'] + cmc_id + '?convert=' + display_ccy
-    crypto_data = crypto_functions.add_result(crypto_data, coin, balance, float(json.loads(urllib.request.urlopen(url).read())[0]['price_' + display_ccy.lower()]))
+    crypto_data = crypto_globals.add_result(crypto_data, coin, balance, float(json.loads(urllib.request.urlopen(url).read())[0]['price_' + display_ccy.lower()]))
 
 
 # get fiat prices from fixer.io
@@ -28,7 +28,7 @@ url = fixer_config['url'] + '?symbols=' + ','.join([coin for coin in simple_bala
 fxrates = json.loads(urllib.request.urlopen(url).read())
 fxrates['rates'][base_ccy] = 1
 for coin, balance in simple_balances['fiat'].items():
-    crypto_data = crypto_functions.add_result(crypto_data, coin, balance, 1 / fxrates['rates'][coin])
+    crypto_data = crypto_globals.add_result(crypto_data, coin, balance, 1 / fxrates['rates'][coin])
 
 
 #Try BLX using some dodgy hack
@@ -36,7 +36,7 @@ iconomi_config = config['api_config']['iconomi_blx']
 usdrate = fxrates['rates']['USD']
 for coin, balance in simple_balances['iconomi_fund'].items():
     price_usd = float(json.loads(urllib.request.urlopen(iconomi_config['url']+coin+'-chart').read())['chartData'].pop()['y']['tokenPrice'])
-    crypto_data = crypto_functions.add_result(crypto_data, coin, balance, price_usd / usdrate)
+    crypto_data = crypto_globals.add_result(crypto_data, coin, balance, price_usd / usdrate)
 
 
 values = [crypto_data['values'][x] for x in crypto_data['values']]
@@ -44,5 +44,5 @@ total = '{:0,.2f}'.format(sum(values))
 print('£' + total)
 crypto_data['total_value'] = total
 crypto_data['display_ccy'] = display_ccy
-crypto_functions.write_dictionary_as_json_file('crypto_values.json', crypto_data)
+crypto_globals.write_dictionary_as_json_file('crypto_values.json', crypto_data)
 
