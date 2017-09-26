@@ -33,7 +33,7 @@ def write_dictionary_as_json_file(filename, dictionary):
 
 
 # config
-config = json.loads(open('config.json').read())
+config = json.loads(open('../config/config.json').read())
 crypto_balances = {'coins': config["starting_balances"]}
 
 # Ethereum Manager
