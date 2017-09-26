@@ -20,8 +20,7 @@ api_key = cg.config['api_config']['etherscan']['api_key']
 # get the simple ETH balances for each address
 api = Account(address=eth_config['addresses'], api_key=api_key)
 for address in api.get_balance_multiple():
-    cg.add_balance('ETH',
-                                  int(address['balance']) / cg.coin_config['ETH']['etherscan_units'],
+    cg.add_balance('ETH', int(address['balance']) / cg.coin_config['ETH']['etherscan_units'],
                                  'from ETH address {addr}'.format(addr=address['account']))
 
 # Now add the tokens from each address
@@ -32,8 +31,7 @@ for token in cg.coin_config:
         api = Tokens(contractaddress=contract_address, api_key=api_key)
         balance = 0
         for address in eth_config['addresses']:
-            cg.add_balance(token,
-                                          int(api.get_token_balance(address=address)) / cg.coin_config[token][
+            cg.add_balance(token, int(api.get_token_balance(address=address)) / cg.coin_config[token][
                                              'etherscan_units'], 'from ETH address {addr}'.format(addr=address))
 
 # Coinbase
@@ -73,8 +71,7 @@ bch_config = cg.config['wallets']['bitcoin-cash']
 for address in bch_config['addresses']:
     bch_url = cg.config['api_config']['blockchair']['url'] + '?q=recipient({addr})'.format(addr=address)
     blockchair_result = json.loads(urllib.request.urlopen(bch_url).read())
-    cg.add_balance('BCH', int(blockchair_result['data'][0]['value']) / cg.coin_config['BCH'][
-                                             'blockchair_units'],
+    cg.add_balance('BCH', int(blockchair_result['data'][0]['value']) / cg.coin_config['BCH']['blockchair_units'],
                                  'from BCH address {addr}'.format(addr=address))
 
 #Write data files
