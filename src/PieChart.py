@@ -31,4 +31,8 @@ with plt.xkcd():
 
     plt.axis('equal') #ensure pie is round
     plt.savefig('../data/crypto_pie.jpg', bbox_inches='tight')
+
+    #short term hack so i can see it!
+    plt.savefig('../../../../Google Drive/crypto_pie.jpg', bbox_inches='tight')
     #plt.show()
+    
