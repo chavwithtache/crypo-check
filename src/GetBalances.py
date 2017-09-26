@@ -8,18 +8,15 @@ import json
 import crypto_functions
 
 
-
-
 # config
 config = json.loads(open('../config/config.json').read())
+coin_config = config['coins']
 crypto_balances = {'coins': config["starting_balances"]}
 
 # Ethereum Manager
 # pip install etherscan
 
-
 eth_config = config['wallets']['ethereum']
-coin_config = config['coins']
 api_key = config['api_config']['etherscan']['api_key']
 
 # get the simple ETH balances for each address

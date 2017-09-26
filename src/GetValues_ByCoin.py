@@ -5,18 +5,15 @@ import crypto_functions
 
 crypto_data = {'coins': {}}
 
-
 # config
 config = json.loads(open('../config/config.json').read())
+coin_config = config['coins']
+
 crypto_balances = json.loads(open('../data/crypto_balances.json').read())['coins']
 simple_balances = json.loads(open('../data/crypto_balances_aggregated.json').read())['coins']
 
-
-cmc_config = config['api_config']['coinmarketcap']
-fixer_config = config['api_config']['fixerio']
-coin_config = config['coins']
-
 # get crypto prices from coin market cap
+cmc_config = config['api_config']['coinmarketcap']
 display_ccy = cmc_config['display_ccy']
 for coin, balance in simple_balances['crypto'].items():
     cmc_id = coin_config[coin]['coinmarketcap_id']
@@ -25,16 +22,13 @@ for coin, balance in simple_balances['crypto'].items():
 
 
 # get fiat prices from fixer.io
+fixer_config = config['api_config']['fixerio']
 base_ccy = fixer_config['base_ccy']
 url = fixer_config['url'] + '?symbols=' + ','.join([coin for coin in simple_balances['fiat']]) + '&base=' + base_ccy
 fxrates = json.loads(urllib.request.urlopen(url).read())
-
+fxrates['rates'][base_ccy] = 1
 for coin, balance in simple_balances['fiat'].items():
-    if coin == base_ccy:
-        crypto_data = crypto_functions.add_result_bycoin(crypto_data, coin, balance, 1)
-    else:
-        crypto_data = crypto_functions.add_result_bycoin(crypto_data, coin, balance, 1 / fxrates['rates'][coin])
-
+    crypto_data = crypto_functions.add_result_bycoin(crypto_data, coin, balance, 1 / fxrates['rates'][coin])
 
 
 #Try BLX using some dodgy hack
