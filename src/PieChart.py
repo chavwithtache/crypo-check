@@ -1,5 +1,6 @@
 import os, json
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as grd
 import arrow
 
 data = []
@@ -36,10 +37,11 @@ for value, label in sorted_data:
 
 with plt.xkcd():
     plt.rcParams.update({'font.size': 12})
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 13))
-    # fig.set_size_inches(8,6)
+    fig = plt.figure(figsize=(7, 12))
+    gs = grd.GridSpec(2, 1, height_ratios=[2, 1])
+    ax1 = plt.subplot(gs[0])
+    ax2 = plt.subplot(gs[1])
 
-    # ax = fig.add_axes((0, 0, .9, .9))
     ax1.set_title('Total Value: ' + crypto_data['total_value'])  # , bbox={'facecolor': '0.8', 'pad': 3})
     # plt.rcParams.update({'font.size': 14}) #adjust font size; not really needed
 
@@ -56,7 +58,7 @@ with plt.xkcd():
     #ax2.set_xticklabels(date_labels, rotation=90)
 
     plt.xticks(rotation=90)
-    plt.show()
+    #plt.show()
 
     plt.savefig('../data/crypto_pie.jpg', bbox_inches='tight')
 
