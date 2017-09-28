@@ -1,6 +1,7 @@
 import os, json
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as grd
+import matplotlib.ticker as tck
 import arrow
 
 data = []
@@ -54,7 +55,8 @@ with plt.xkcd():
     ax1.axis('equal')  # ensure pie is round
 
     ax2.plot(datetimes, totals)
-    ax2.set_title('Total Value Over Time')
+    ax2.set_title('Total Value Over Time (kGBP)')
+    ax2.get_yaxis().set_major_formatter(tck.FuncFormatter(lambda x, p: format(x / 1000, ',')))
     #ax2.set_xticklabels(date_labels, rotation=90)
 
     plt.xticks(rotation=90)
