@@ -26,10 +26,15 @@ def simplify_balances():
     return simple_balances
 
 
-def write_dictionary_as_json_file(filename, dictionary):
+def write_dictionary_as_json_file(filename, dictionary,archive=False):
     dictionary['timestamp'] = datetime.datetime.now().isoformat()
     with open('../data/' + filename, 'w') as f:
         f.write(json.dumps(dictionary, indent=4))
+    if archive:
+        archive_filename = '../data/archive/' + dictionary['timestamp'][0:19].replace(':', '') + '_' + filename
+        with open(archive_filename, 'w') as fa:
+            fa.write(json.dumps(dictionary, indent=4))
+    
 
 
 def add_result(crypto_data, coin, balance, price):

@@ -42,5 +42,7 @@ total = '{:0,.2f}'.format(sum(values))
 print('£' + total)
 crypto_data['total_value'] = total
 crypto_data['display_ccy'] = display_ccy
-cg.write_dictionary_as_json_file('crypto_values.json', crypto_data)
+cg.write_dictionary_as_json_file('crypto_values.json', crypto_data, True)
 
+#temp hack to get online..
+cg.write_dictionary_as_json_file('../../../../Google Drive/crypto_values.json', crypto_data)
