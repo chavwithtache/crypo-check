@@ -4,24 +4,21 @@ import matplotlib.gridspec as grd
 import matplotlib.ticker as tck
 import arrow
 
-data = []
-for filename in os.listdir('../data/archive'):
-    if filename.endswith("_crypto_values.json"):
-        data.append(json.loads(open('../data/archive/' + filename).read()))
-        continue
-
 arrow_timestamps = []
 totals = []
-for item in data:
-    arrow_timestamps.append(arrow.get(item['timestamp']))
-    totals.append(float(item['total_value'].replace(',', '')))
+for filename in os.listdir('../data/archive/crypto_values'):
+    if filename.endswith("_crypto_values.json"):
+        data = json.loads(open('../data/archive/crypto_values/' + filename).read())
+        arrow_timestamps.append(arrow.get(data['timestamp']))
+        totals.append(float(data['data']['total_value'].replace(',', '')))
+
 
 datetimes = [a.datetime for a in arrow_timestamps]
 date_labels = [a.format('MM-DD HH:MM') for a in arrow_timestamps]
 
 # Get PIE Data
 crypto_data = json.loads(open('../data/crypto_values.json').read())
-crypto_values = crypto_data['values']
+crypto_values = crypto_data['data']['values']
 
 # sort the data by value - there must be a better way!
 tuples = crypto_values.items()
@@ -43,7 +40,7 @@ with plt.xkcd():
     ax1 = plt.subplot(gs[0])
     ax2 = plt.subplot(gs[1])
 
-    ax1.set_title('Total Value: ' + crypto_data['total_value'])  # , bbox={'facecolor': '0.8', 'pad': 3})
+    ax1.set_title('Total Value: ' + crypto_data['data']['total_value'])  # , bbox={'facecolor': '0.8', 'pad': 3})
     # plt.rcParams.update({'font.size': 14}) #adjust font size; not really needed
 
     ax1.pie(values,
