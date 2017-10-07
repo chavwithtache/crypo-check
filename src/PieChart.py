@@ -27,11 +27,16 @@ sorted_data = sorted(zip([y for _, y in tuples], [x for x, _ in tuples]), revers
 # Data to plot
 labels = []
 values = []
-
+dust_value = 0.0
 for value, label in sorted_data:
-    if value > 1:
+    if value > 1000:
         labels.append(label)
         values.append(int(value))
+    else:
+        dust_value +=value
+if dust_value > 1000:
+    labels.append('OTHER')
+    values.append(int(dust_value))
 
 with plt.xkcd():
     plt.rcParams.update({'font.size': 12})
@@ -40,7 +45,7 @@ with plt.xkcd():
     ax1 = plt.subplot(gs[0])
     ax2 = plt.subplot(gs[1])
 
-    ax1.set_title('Total Value: ' + crypto_data['data']['total_value'])  # , bbox={'facecolor': '0.8', 'pad': 3})
+    #ax1.set_title('Total Value: ' + crypto_data['data']['total_value'])  # , bbox={'facecolor': '0.8', 'pad': 3})
     # plt.rcParams.update({'font.size': 14}) #adjust font size; not really needed
 
     ax1.pie(values,
@@ -52,7 +57,8 @@ with plt.xkcd():
     ax1.axis('equal')  # ensure pie is round
 
     ax2.plot(datetimes, totals)
-    ax2.set_title('Total Value Over Time (kGBP)')
+    #ax2.set_title('Total Value Over Time (kGBP)')
+    ax2.set_title('Total Value: ' + crypto_data['data']['total_value'])
     ax2.get_yaxis().set_major_formatter(tck.FuncFormatter(lambda x, p: format(x / 1000, ',')))
     #ax2.set_xticklabels(date_labels, rotation=90)
 

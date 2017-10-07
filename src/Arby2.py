@@ -3,6 +3,7 @@ import urllib.request
 import logging
 import gdax
 import cryptolib
+import sys
 
 logger = logging.getLogger('crypto_arby2')
 hdlr = logging.FileHandler('../logs/crypto_arby2.log')
@@ -34,14 +35,18 @@ class Arby2(object):
         except:
             logger.error('Error loading: ' + url)
 
-    def reload_orderbook(self):
+    def reload_orderbook(self, coin='all'):
         self.orderbook = {}
-        self.load_single_orderbook('ETHEUR')
-        self.load_single_orderbook('LTCEUR')
-        self.load_single_orderbook('BTCEUR')
-        self.load_single_orderbook('ETHBTC')
-        self.load_single_orderbook('LTCBTC')
-
+        if coin == 'all':
+            self.load_single_orderbook('ETHEUR')
+            self.load_single_orderbook('LTCEUR')
+            self.load_single_orderbook('BTCEUR')
+            self.load_single_orderbook('ETHBTC')
+            self.load_single_orderbook('LTCBTC')
+        else:
+            self.load_single_orderbook(coin + 'EUR')
+            self.load_single_orderbook('BTCEUR')
+            self.load_single_orderbook(coin + 'BTC')
 
     def calc_1(self, starting_coin):
         """
@@ -91,7 +96,7 @@ class Arby2(object):
 
                 if EUR_PL < 0.1:
                     msg = 'PL: %f EUR. No Trade. (%s-BTC)' % (EUR_PL, starting_coin)
-                    logger.info(msg)
+                    logger.debug(msg)
                     print(msg)
                 else:
                     # looks good..
@@ -125,8 +130,8 @@ class Arby2(object):
                         logger.info(gdax_auth_client.buy(product_id=starting_coin + '-EUR', type='market', size=size1))
                         logger.info(gdax_auth_client.sell(product_id=starting_coin + '-BTC', type='market', size=size1))
                         logger.info(gdax_auth_client.sell(product_id='BTC-EUR', type='market', size=size2))
-        except:
-            logger.error('Error running calc_1: ' + starting_coin)
+        except Exception:
+            logger.exception('Error running calc_1: ' + starting_coin)
 
     def calc_2(self, switch_coin):
         """
@@ -181,7 +186,7 @@ class Arby2(object):
 
             EUR_PL = -(size1 * entry_price * (1 + entry_fee)) + size2 * exit_price * (1 - exit_fee)
 
-            if EUR_PL < 0.05:
+            if EUR_PL < 0.01:
                 msg = 'PL: %f EUR. No Trade. (BTC-%s)' % (EUR_PL, switch_coin)
                 logger.debug(msg)
                 print(msg)
@@ -206,7 +211,7 @@ class Arby2(object):
                 self.balances['EUR'] += size2 * exit_price * (1 - exit_fee)
                 logger.info(self.balances)
 
-                if self.balances['EUR'] >= 0.05 and self.balances['ETH'] == 0 and self.balances['BTC'] == 0 and \
+                if self.balances['EUR'] >= 0.01 and self.balances['ETH'] == 0 and self.balances['BTC'] == 0 and \
                                 self.balances['LTC'] == 0 and size2 > 0.01 and size1 > 0.01:
                     print('trading...see logs for info')
                     #here we go.....
@@ -221,13 +226,22 @@ class Arby2(object):
             logger.error('Error running calc_2: ' + switch_coin)
 
 test = Arby2()
-#test.calc_1('ETH')
-#test.calc_1('LTC')
-#test.calc_2('ETH')
-#test.calc_2('LTC')
-while True:
-    test.reload_orderbook()
-    test.calc_1('ETH')
-    test.calc_1('LTC')
-    test.calc_2('ETH')
-    test.calc_2('LTC')
+counter = 0
+
+if len(sys.argv) == 1:
+    while True:
+        counter += 1
+        print(counter)
+        test.reload_orderbook()
+        test.calc_1('ETH')
+        test.calc_1('LTC')
+        test.calc_2('ETH')
+        test.calc_2('LTC')
+elif len(sys.argv) == 2:
+    while True:
+        counter += 1
+        print(counter)
+        test.reload_orderbook(sys.argv[1])
+        test.calc_1(sys.argv[1])
+        test.calc_2(sys.argv[1])
+
