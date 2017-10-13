@@ -6,11 +6,15 @@ import arrow
 
 arrow_timestamps = []
 totals = []
+lookback_days = 7
+
 for filename in os.listdir('../data/archive/crypto_values'):
     if filename.endswith("_crypto_values.json"):
         data = json.loads(open('../data/archive/crypto_values/' + filename).read())
-        arrow_timestamps.append(arrow.get(data['timestamp']))
-        totals.append(float(data['data']['total_value'].replace(',', '')))
+        data_date = arrow.get(data['timestamp'])
+        if (arrow.now() - data_date).days < lookback_days:
+            arrow_timestamps.append(arrow.get(data['timestamp']))
+            totals.append(float(data['data']['total_value'].replace(',', '')))
 
 
 datetimes = [a.datetime for a in arrow_timestamps]
@@ -28,7 +32,15 @@ sorted_data = sorted(zip([y for _, y in tuples], [x for x, _ in tuples]), revers
 labels = []
 values = []
 dust_value = 0.0
+iconomi_coins = ['BLX', 'AAAX', 'CAR']
+iconomi_value = 0.0
+
 for value, label in sorted_data:
+
+    try:
+        iconomi_value += value if iconomi_coins.index(label) >= 0 else 0
+    except:pass
+
     if value > 1000:
         labels.append(label)
         values.append(int(value))
@@ -39,6 +51,7 @@ if dust_value > 1000:
     values.append(int(dust_value))
 
 with plt.xkcd():
+#if True: #below to retain indent
     plt.rcParams.update({'font.size': 12})
     fig = plt.figure(figsize=(7, 12))
     gs = grd.GridSpec(2, 1, height_ratios=[2, 1])
@@ -58,7 +71,7 @@ with plt.xkcd():
 
     ax2.plot(datetimes, totals)
     #ax2.set_title('Total Value Over Time (kGBP)')
-    ax2.set_title('Total Value: ' + crypto_data['data']['total_value'])
+    ax2.set_title('Total Value: {}   :    Iconomi Funds: {:,.0f}'.format(crypto_data['data']['total_value'], iconomi_value))
     ax2.get_yaxis().set_major_formatter(tck.FuncFormatter(lambda x, p: format(x / 1000, ',')))
     #ax2.set_xticklabels(date_labels, rotation=90)
 

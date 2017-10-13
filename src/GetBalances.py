@@ -3,6 +3,7 @@ from etherscan.tokens import Tokens
 from etherscan.accounts import Account
 from coinbase.wallet.client import Client as cbClient
 from bitfinex.client import TradeClient as bfxClient
+from binance.client import Client as bnbClient
 import gdax
 import json
 import cryptolib
@@ -60,6 +61,17 @@ gdax_auth_client = gdax.AuthenticatedClient(gdax_config['api_key'], gdax_config[
 for account in gdax_auth_client.get_accounts():
     bal.add_balance(account['currency'], float(account['balance']),
                                  'from GDAX {addr}'.format(addr=account['id']))
+
+#Binance
+# pip install python-binance
+# also requires Visual C++ Build Tools.. from here http://landinghub.visualstudio.com/visual-cpp-build-tools
+binance_config = api_config['binance']
+
+bnb_client = bnbClient(binance_config['api_key'], binance_config['api_secret'])
+nonEmpty = [bnbbal for bnbbal in bnb_client.get_account()['balances'] if float(bnbbal['free']) != 0 or  float(bnbbal['locked']) != 0]
+for bnbbal in nonEmpty:
+    bal.add_balance(bnbbal['asset'], float(bnbbal['free']) + float(bnbbal['locked']), 'from Binance')
+
 
 
 #Bitfinex

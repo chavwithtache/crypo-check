@@ -17,7 +17,6 @@ cfg = cryptolib.Config()
 api_config = cfg.api_config()
 
 gdax_config = api_config['gdax_write']
-
 class Arby2(object):
     def __init__(self):
         self.fees = {'ETHEUR': 0.003,
@@ -25,7 +24,8 @@ class Arby2(object):
                     'BTCEUR': 0.003,
                     'LTCBTC': 0.003,
                     'LTCEUR': 0.003}
-
+        self.gdax_auth_client = gdax.AuthenticatedClient(gdax_config['api_key'], gdax_config['api_secret'],
+                                                         gdax_config['passphrase'])
     def load_single_orderbook(self, market):
         try:
             url = 'https://api.gdax.com/products/' + market[0:3] + '-' + market[3:6] + '/book?level=1'
@@ -94,7 +94,7 @@ class Arby2(object):
 
                 EUR_PL = -(size1 * entry_price * (1 + entry_fee)) + size2 * exit_price * (1 - exit_fee)
 
-                if EUR_PL < 0.1:
+                if EUR_PL < 0.5:
                     msg = 'PL: %f EUR. No Trade. (%s-BTC)' % (EUR_PL, starting_coin)
                     logger.debug(msg)
                     print(msg)
@@ -119,17 +119,15 @@ class Arby2(object):
                     self.balances['EUR'] += size2 * exit_price * (1 - exit_fee)
                     logger.info(self.balances)
 
-                    if self.balances['EUR'] > 0.1 and self.balances['ETH'] == 0 and self.balances['BTC'] == 0 and \
+                    if self.balances['EUR'] > 0.5 and self.balances['ETH'] == 0 and self.balances['BTC'] == 0 and \
                                     self.balances['LTC'] == 0 and size2 > 0.01 and size1 > 0.01:
                         print('trading...')
                         # here we go.....
                         logger.info('holy shit Im doing it!!')
 
-                        gdax_auth_client = gdax.AuthenticatedClient(gdax_config['api_key'], gdax_config['api_secret'],
-                                                                    gdax_config['passphrase'])
-                        logger.info(gdax_auth_client.buy(product_id=starting_coin + '-EUR', type='market', size=size1))
-                        logger.info(gdax_auth_client.sell(product_id=starting_coin + '-BTC', type='market', size=size1))
-                        logger.info(gdax_auth_client.sell(product_id='BTC-EUR', type='market', size=size2))
+                        logger.info(self.gdax_auth_client.buy(product_id=starting_coin + '-EUR', type='market', size=size1))
+                        logger.info(self.gdax_auth_client.sell(product_id=starting_coin + '-BTC', type='market', size=size1))
+                        logger.info(self.gdax_auth_client.sell(product_id='BTC-EUR', type='market', size=size2))
         except Exception:
             logger.exception('Error running calc_1: ' + starting_coin)
 
@@ -186,7 +184,7 @@ class Arby2(object):
 
             EUR_PL = -(size1 * entry_price * (1 + entry_fee)) + size2 * exit_price * (1 - exit_fee)
 
-            if EUR_PL < 0.01:
+            if EUR_PL < 0.5:
                 msg = 'PL: %f EUR. No Trade. (BTC-%s)' % (EUR_PL, switch_coin)
                 logger.debug(msg)
                 print(msg)
@@ -211,17 +209,16 @@ class Arby2(object):
                 self.balances['EUR'] += size2 * exit_price * (1 - exit_fee)
                 logger.info(self.balances)
 
-                if self.balances['EUR'] >= 0.01 and self.balances['ETH'] == 0 and self.balances['BTC'] == 0 and \
+                if self.balances['EUR'] >= 0.5 and self.balances['ETH'] == 0 and self.balances['BTC'] == 0 and \
                                 self.balances['LTC'] == 0 and size2 > 0.01 and size1 > 0.01:
                     print('trading...see logs for info')
                     #here we go.....
                     logger.info('fingers crossed..!!')
 
-                    gdax_auth_client = gdax.AuthenticatedClient(gdax_config['api_key'], gdax_config['api_secret'],
-                                                                gdax_config['passphrase'])
-                    logger.info(gdax_auth_client.buy(product_id='BTC-EUR', type='market', size=size1))
-                    logger.info(gdax_auth_client.buy(product_id=switch_coin + '-BTC', type='market', size=size2))
-                    logger.info(gdax_auth_client.sell(product_id=switch_coin + '-EUR', type='market', size=size2))
+
+                    logger.info(self.gdax_auth_client.buy(product_id='BTC-EUR', type='market', size=size1))
+                    logger.info(self.gdax_auth_client.buy(product_id=switch_coin + '-BTC', type='market', size=size2))
+                    logger.info(self.gdax_auth_client.sell(product_id=switch_coin + '-EUR', type='market', size=size2))
         except:
             logger.error('Error running calc_2: ' + switch_coin)
 
@@ -238,6 +235,7 @@ if len(sys.argv) == 1:
         test.calc_2('ETH')
         test.calc_2('LTC')
 elif len(sys.argv) == 2:
+    logger.info('Starting Process: {}'.format(sys.argv[1]))
     while True:
         counter += 1
         print(counter)
