@@ -10,9 +10,13 @@ lookback_days = 7
 
 for filename in os.listdir('../data/archive/crypto_values'):
     if filename.endswith("_crypto_values.json"):
-        data = json.loads(open('../data/archive/crypto_values/' + filename).read())
-        data_date = arrow.get(data['timestamp'])
+
+        # get timestamp from filename.
+        data_date = arrow.get(filename[0:10])
+
         if (arrow.now() - data_date).days < lookback_days:
+            data = json.loads(open('../data/archive/crypto_values/' + filename).read())
+            data_date = arrow.get(data['timestamp'])
             arrow_timestamps.append(arrow.get(data['timestamp']))
             totals.append(float(data['data']['total_value'].replace(',', '')))
 

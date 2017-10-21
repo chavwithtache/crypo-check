@@ -68,6 +68,8 @@ class ArbBinGdx(object):
                 self.balances['Binance'][self.coin1] = float(account['free'])
             elif account['asset'] == self.coin2:
                 self.balances['Binance'][self.coin2] = float(account['free'])
+            elif account['asset'] == 'BNB': #for record keeping..
+                self.balances['Binance']['BNB'] = float(account['free'])
 
         gdax_balances = self.gdax_client.get_accounts()
         self.balances['GDAX'] = {}
