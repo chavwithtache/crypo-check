@@ -44,19 +44,15 @@ class ToddlerTrading(object):
                 self.check_product(trade_pair)
         except:
             print('some error...')
-            logger.error('some error...')
-
+            logger.exception('some error...')
 
     def do_trades(self, trade_pair, mid_price):
 
-        # do trades
         sell_price = round(mid_price + trade_pair.spread / 2, 2)
         self.do_trade(trade_pair, 'sell', sell_price)
 
         buy_price = round(mid_price - trade_pair.spread / 2, 2)
         self.do_trade(trade_pair, 'buy', buy_price)
-
-
 
     def do_trade(self, trade_pair, side, price):
         market = trade_pair.market
@@ -84,7 +80,7 @@ class ToddlerTrading(object):
                 orders_left += 1
             except ValueError:
                 # not in the list so delete the file. this means that has traded since last run
-                os.remove('../data/toddler_trading/ETH-EUR/' + active_id)
+                os.remove('../data/toddler_trading/{}/{}'.format(market, active_id))
 
         if orders_left == 0:
             print('{}: orders all hit - do another pair'.format(market))
@@ -92,7 +88,7 @@ class ToddlerTrading(object):
             orderbook = json.loads(urllib.request.urlopen(url).read())
             mid = (float(orderbook['bids'][0][0]) + float(orderbook['asks'][0][0])) / 2
 
-            self.do_trades(trade_pair,mid)
+            self.do_trades(trade_pair, mid)
 
         else:
             self.counter += 1
