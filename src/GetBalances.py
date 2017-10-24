@@ -28,6 +28,7 @@ api_key = api_config['etherscan']['api_key']
 print('start etherscan')
 api = Account(address=eth_config['addresses'], api_key=api_key)
 for address in api.get_balance_multiple():
+    print(address)
     bal.add_balance('ETH', int(address['balance']) / coin_config['ETH']['etherscan_units'],
                                  'from ETH address {addr}'.format(addr=address['account']))
 
@@ -60,20 +61,27 @@ gdax_config = api_config['gdax']
 
 gdax_auth_client = gdax.AuthenticatedClient(gdax_config['api_key'], gdax_config['api_secret'], gdax_config['passphrase'])
 for account in gdax_auth_client.get_accounts():
+    print(account)
     bal.add_balance(account['currency'], float(account['balance']),
                                  'from GDAX {addr}'.format(addr=account['id']))
 print('end GDAX')
 #Binance
+
 # pip install python-binance
 # also requires Visual C++ Build Tools.. from here http://landinghub.visualstudio.com/visual-cpp-build-tools
-print('start binance')
-binance_config = api_config['binance']
 
-bnb_client = bnbClient(binance_config['api_key'], binance_config['api_secret'])
-nonEmpty = [bnbbal for bnbbal in bnb_client.get_account()['balances'] if float(bnbbal['free']) != 0 or  float(bnbbal['locked']) != 0]
-for bnbbal in nonEmpty:
-    bal.add_balance(bnbbal['asset'], float(bnbbal['free']) + float(bnbbal['locked']), 'from Binance')
-print('end binance')
+#NOT WORKING.. COMMENT OUT FOR NOW
+if False:
+    print('start binance')
+    binance_config = api_config['binance']
+
+    bnb_client = bnbClient(binance_config['api_key'], binance_config['api_secret'])
+    bnb_balances = bnb_client.get_account()['balances']
+    print(bnb_balances)
+    nonEmpty = [bnbbal for bnbbal in bnb_balances if float(bnbbal['free']) != 0 or  float(bnbbal['locked']) != 0]
+    for bnbbal in nonEmpty:
+        bal.add_balance(bnbbal['asset'], float(bnbbal['free']) + float(bnbbal['locked']), 'from Binance')
+    print('end binance')
 
 
 #Bitfinex
