@@ -23,6 +23,7 @@ print('start cmc')
 for coin, balance in simple_balances['crypto'].items():
     cmc_id = coin_config[coin]['coinmarketcap_id']
     url = cmc_config['url'] + cmc_id + '?convert=' + display_ccy
+    print(url)
     val.add_result(coin, balance, float(json.loads(urllib.request.urlopen(url).read())[0]['price_' + display_ccy.lower()]))
 print('end cmc')
 
@@ -41,9 +42,12 @@ print('end fixer.io')
 print('start iconomi')
 iconomi_config = api_config['iconomi_blx']
 usdrate = fxrates['rates']['USD']
+iconomi_value = 0.0
 for coin, balance in simple_balances['iconomi_fund'].items():
     price_usd = float(json.loads(urllib.request.urlopen(iconomi_config['url']+coin+'-chart').read())['chartData'].pop()['y']['tokenPrice'])
+    iconomi_value += balance * price_usd / usdrate
     val.add_result(coin, balance, price_usd / usdrate)
+val.set_iconomi_value(iconomi_value)
 print('end iconomi')
 
 print('£' + '{:0,.2f}'.format(val.total_value()))

@@ -26,6 +26,14 @@ class Balances(object):
             self.coins[coin] = {'balances': []}
         self.coins[coin]['balances'].append({'balance': balance, 'description': description})
 
+    def add_balances(self, new_balances):
+        for coin, balances in new_balances.items():
+            for balance in balances['balances']:
+                if balance['balance'] != 0.0:
+                    if self.coins.get(coin) is None:
+                        self.coins[coin] = {'balances': []}
+                    self.coins[coin]['balances'].append(balance)
+
     def get_aggregated_balances(self, coin_config):
         simple_balances = {"crypto": {}, "fiat": {}, "iconomi_fund": {}}
         for coin, balances in self.coins.items():
@@ -33,8 +41,8 @@ class Balances(object):
                 [x['balance'] for x in balances['balances']])
         return simple_balances
 
-    def write_balances(self):
-        write_dictionary_as_json_file('crypto_balances', self.coins)
+    def write_balances(self, filename='crypto_balances'):
+        write_dictionary_as_json_file(filename, self.coins)
 
     def write_aggregated_balances(self, coin_config):
         write_dictionary_as_json_file('crypto_balances_aggregated', self.get_aggregated_balances(coin_config))
@@ -51,6 +59,7 @@ class Valuation(object):
         self.prices = {}
         self.values = {}
         self.display_ccy = display_ccy
+        self.iconomi_value = 0.0
 
     def add_result(self, coin, balance, price):
         self.balances[coin] = balance
@@ -63,12 +72,16 @@ class Valuation(object):
     def set_display_ccy(self, display_ccy):
         self.display_ccy = display_ccy
 
+    def set_iconomi_value(self, iconomi_value):
+        self.iconomi_value = iconomi_value
+
     def valuation(self):
         return {'balances': self.balances,
                             'prices': self.prices,
                             'values': self.values,
                             'total_value': '{:0,.2f}'.format(self.total_value()),
-                            'display_ccy': self.display_ccy}
+                            'display_ccy': self.display_ccy,
+                            'iconomi_value': self.iconomi_value}
 
     def write_valuation(self):
         write_dictionary_as_json_file('crypto_values', self.valuation(), True)

@@ -17,32 +17,10 @@ coin_config = cfg.coin_config()
 
 bal = cryptolib.Balances(cfg.starting_balances())
 
-# Ethereum Manager
-# pip install etherscan
+#add in blockchain balances
+blockchain_balances = json.loads(open('../data/blockchain_balances.json').read())['data']
+bal.add_balances(blockchain_balances)
 
-
-eth_config = wallet_config['ethereum']
-api_key = api_config['etherscan']['api_key']
-
-# get the simple ETH balances for each address
-print('start etherscan')
-api = Account(address=eth_config['addresses'], api_key=api_key)
-for address in api.get_balance_multiple():
-    print(address)
-    bal.add_balance('ETH', int(address['balance']) / coin_config['ETH']['etherscan_units'],
-                                 'from ETH address {addr}'.format(addr=address['account']))
-
-# Now add the tokens from each address
-
-for token in coin_config:
-    contract_address = coin_config[token].get('erc20_token_contract_address')
-    if contract_address != None:
-        api = Tokens(contractaddress=contract_address, api_key=api_key)
-        balance = 0
-        for address in eth_config['addresses']:
-            bal.add_balance(token, int(api.get_token_balance(address=address)) / coin_config[token][
-                                             'etherscan_units'], 'from ETH address {addr}'.format(addr=address))
-print('end etherscan')
 # Coinbase
 # pip install coinbase
 print('start coinbase')
@@ -71,7 +49,7 @@ print('end GDAX')
 # also requires Visual C++ Build Tools.. from here http://landinghub.visualstudio.com/visual-cpp-build-tools
 
 #NOT WORKING.. COMMENT OUT FOR NOW
-if False:
+if True:
     print('start binance')
     binance_config = api_config['binance']
 
@@ -94,15 +72,6 @@ for account in bfx_auth_client.balances():
                                  'from Bitfinex')
 print('end Bitfinex')
 
-#Get BCH from Blockchair
-print('start blockchair')
-bch_config = wallet_config['bitcoin-cash']
-for address in bch_config['addresses']:
-    bch_url = api_config['blockchair']['url'] + '?q=recipient({addr})'.format(addr=address)
-    blockchair_result = json.loads(urllib.request.urlopen(bch_url).read())
-    bal.add_balance('BCH', int(blockchair_result['data'][0]['value']) / coin_config['BCH']['blockchair_units'],
-                                 'from BCH address {addr}'.format(addr=address))
-print('end blockchair')
 
 #Write data files
 bal.write_balances()

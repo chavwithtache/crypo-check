@@ -127,11 +127,12 @@ class ToddlerTrading(object):
                 print('{} {}: waiting for orders to hit. {} order(s) outstanding'.format(self.counter, market,
                                                                                          orders_left))
 
-    def calc_sentiment(self, market):
+    @staticmethod
+    def calc_sentiment(market):
         # sentiment is the ratio of the spread that is applied to the sell order
         # eg if 0.8 is specified then the orders will be:
         # sell_price =  mid + 0.8 * spread
-        # buy_price =  mid + 0.2 * spread
+        # buy_price =  mid - 0.2 * spread
         # eg. 0.2 is bearish, 0.5 neutral, 0.8 bullish
 
         granularity = 60  # number of seconds for the candle
@@ -149,7 +150,10 @@ class ToddlerTrading(object):
         to_time = arrow.get(public_client.get_time()['iso']).shift(seconds=-5)
         from_time = to_time.shift(minutes=-lookback_mins)
 
-        result = public_client.get_product_historic_rates(product_id=market, start=from_time.isoformat()[:19],
+        #if the market is vs EUR or GBP, check the USD market as it is much more liquid
+        liq_market = market[0:4] + 'USD' if market[4:7] in ['EUR', 'GBP'] else market
+
+        result = public_client.get_product_historic_rates(product_id=liq_market, start=from_time.isoformat()[:19],
                                                           end=to_time.isoformat()[:19], granularity=granularity)
 
         x = np.array([candle[0] for candle in result])
@@ -165,7 +169,7 @@ class ToddlerTrading(object):
         # future close
 
         logger.info(
-            'market {}, last {}, next {}. Going {} by {:5.4f}% Calculated sentiment:{}'.format(market, _last, _next,
+            'market {} (used {}), last {}, next {}. Going {} by {:5.4f}% Calculated sentiment:{}'.format(market, liq_market,  _last, _next,
                                                                                                'up' if _next > _last else 'down',
                                                                                                100 * pc_move,
                                                                                                sentiment))
@@ -174,11 +178,13 @@ class ToddlerTrading(object):
 
 
 test = ToddlerTrading()
-test.add_pair('ETH-EUR', 2.4, 0.6)
-test.add_pair('LTC-EUR', 0.55, 0.2)
-test.add_pair('BTC-EUR', 0.1, 18.0)
-test.add_pair('BTC-GBP', 0.1, 18.0)
+#test.add_pair('ETH-EUR', 10, 2.5)
+test.add_pair('ETH-EUR', 5, 1.0)
+test.add_pair('LTC-EUR', 6, 0.4)
+#test.add_pair('BTC-EUR', 0.1, 20.0)
+#test.add_pair('BTC-GBP', 0.1, 18.0)
 
 logger.info('started')
 while True:
     test.check_products()
+
