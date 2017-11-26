@@ -32,6 +32,7 @@ print('start fixer.io')
 fixer_config = api_config['fixerio']
 base_ccy = fixer_config['base_ccy']
 url = fixer_config['url'] + '?symbols=' + ','.join([coin for coin in simple_balances['fiat']]) + '&base=' + base_ccy
+print(url)
 fxrates = json.loads(urllib.request.urlopen(url).read())
 fxrates['rates'][base_ccy] = 1
 for coin, balance in simple_balances['fiat'].items():

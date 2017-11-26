@@ -2,11 +2,13 @@ import os, json
 import matplotlib.pyplot as plt
 #import matplotlib.gridspec as grd
 import matplotlib.ticker as tck
+import matplotlib.dates as dates
 import arrow
+import seaborn as sns
 
 arrow_timestamps = []
 totals = []
-lookback_days = 7
+lookback_days = 14
 chart_points = 400
 
 # get appropriate number of points for chart for date range
@@ -67,11 +69,15 @@ if dust_value > 5:
     gravel_labels.append('OTHER')
     gravel_values.append(int(dust_value))
 
-with plt.xkcd():
-#if True: #below to retain indent
-    plt.rcParams.update({'font.size': 15})
-    fig = plt.figure(figsize=(9, 12))
-    #fig.autofmt_xdate()
+
+
+sns.set_palette("Pastel1",12)
+
+#with plt.xkcd():
+if True: #below to retain indent
+    #plt.rcParams.update({'font.size': 15})
+    fig = plt.figure(figsize=(6, 8))
+    fig.autofmt_xdate()
     # gs = grd.GridSpec(2, 1, height_ratios=[2, 1])
     # ax1 = plt.subplot(gs[0])
     # ax2 = plt.subplot(gs[1])
@@ -97,18 +103,14 @@ with plt.xkcd():
                startangle=0)
     axMini.axis('equal')  # ensure pie is round
 
-    ax2.plot(datetimes, totals)
+    ax2.plot(datetimes, totals, 'royalblue')
     # ax2.set_title('Total Value Over Time (kGBP)')
     ax2.set_title(
         'Total Value: {}   :   Iconomi: {:,.0f}   :   {}'.format(crypto_data['data']['total_value'], iconomi_value,
-                                                               timestamp))
+                                                               timestamp), fontdict={'fontsize':12})
     ax2.get_yaxis().set_major_formatter(tck.FuncFormatter(lambda x, p: format(x / 1000, ',')))
-    #fig.autofmt_xdate()
-    # ax2.set_xticklabels(date_labels, rotation=90)
 
-    #plt.xticks(rotation=90)
-    #plt.tight_layout()
-    #plt.show()
+    ax2.xaxis.set_major_formatter(dates.DateFormatter('%d-%b'))
 
     plt.savefig('../data/crypto_pie.jpg', bbox_inches='tight')
 

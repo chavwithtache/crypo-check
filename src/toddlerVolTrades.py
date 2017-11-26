@@ -30,6 +30,7 @@ class ToddlerTrading(object):
         self.trade_pairs = []
         self.error_markets = {}
         self.counter = 0
+        self.sentiment_or = {}
 
     def reconnect_client(self):
         self.gdax_auth_client = gdax.AuthenticatedClient(self.gdax_config['api_key'], self.gdax_config['api_secret'],
@@ -38,9 +39,10 @@ class ToddlerTrading(object):
     def reload_orders(self):
         self.orders = self.gdax_auth_client.get_orders()
 
-    def add_pair(self, market, size, spread):
+    def add_pair(self, market, size, spread, sentiment_or=-1.0):
         self.trade_pairs.append(self.Pair(market=market, size=size, spread=spread))
         self.error_markets[market] = False
+        self.sentiment_or[market] = sentiment_or
 
     def check_products(self):
         try:
@@ -53,7 +55,7 @@ class ToddlerTrading(object):
 
     def do_trades(self, trade_pair, mid_price):
         market = trade_pair.market
-        sentiment = self.calc_sentiment(market)
+        sentiment = self.calc_sentiment(market) if self.sentiment_or[market] == -1.0 else self.sentiment_or[market]
 
         sell_price = round(mid_price + trade_pair.spread * sentiment, 2)
         trade1_id = self.do_trade(trade_pair, 'sell', sell_price)
@@ -179,8 +181,8 @@ class ToddlerTrading(object):
 
 test = ToddlerTrading()
 #test.add_pair('ETH-EUR', 10, 2.5)
-test.add_pair('ETH-EUR', 5, 1.0)
-test.add_pair('LTC-EUR', 6, 0.4)
+test.add_pair('ETH-EUR', 8, 2.0, 0.75)  # NB I AM FORCING SENTIMENT TO BE BULLISH HERE
+test.add_pair('LTC-EUR', 10, 0.4)
 #test.add_pair('BTC-EUR', 0.1, 20.0)
 #test.add_pair('BTC-GBP', 0.1, 18.0)
 
