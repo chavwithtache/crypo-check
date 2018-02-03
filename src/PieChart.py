@@ -5,6 +5,11 @@ import matplotlib.ticker as tck
 import matplotlib.dates as dates
 import arrow
 import seaborn as sns
+import cryptolib
+
+# config
+cfg = cryptolib.Config()
+coin_config = cfg.coin_config()
 
 arrow_timestamps = []
 totals = []
@@ -33,9 +38,21 @@ date_labels = [a.format('MM-DD HH:MM') for a in arrow_timestamps]
 
 # Get PIE Data
 crypto_data = json.loads(open('../data/crypto_values.json').read())
-crypto_values = crypto_data['data']['values']
+crypto_values_raw = crypto_data['data']['values']
+crypto_values ={}
+
+#Make all Iconomi Funds into a single wedge
+iconomi_value = 0.0
+for coin in crypto_values_raw:
+    if coin_config.get(coin)['type'] == 'iconomi_fund':
+        iconomi_value += crypto_values_raw[coin]
+    else:
+
+        crypto_values[coin] = crypto_values_raw[coin]
+
+crypto_values['ICONOMI'] = iconomi_value
+
 timestamp = crypto_data['timestamp'].split('.')[0]
-iconomi_value = crypto_data['data']['iconomi_value']
 
 # sort the data by value - there must be a better way!
 tuples = crypto_values.items()
@@ -48,30 +65,31 @@ gravel_value = 0.0
 gravel_labels = []
 gravel_values = []
 dust_value = 0.0
-
+gravel_max = 4000.0
+dust_max = 200.00
 for value, label in sorted_data:
 
-    if value > 1000:
+    if value > gravel_max:
         labels.append(label)
         values.append(int(value))
-    elif value > 50:
+    elif value > dust_max:
         gravel_value += value
         gravel_labels.append(label)
         gravel_values.append(int(value))
     else:
         dust_value += value
 
-if gravel_value + dust_value > 1000:
-    labels.append('OTHER')
-    values.append(int(gravel_value + dust_value))
+#if gravel_value + dust_value > gravel_max:
+labels.append('OTHER')
+values.append(int(gravel_value + dust_value))
 
-if dust_value > 5:
-    gravel_labels.append('OTHER')
-    gravel_values.append(int(dust_value))
+#if dust_value > 5:
+gravel_labels.append('OTHER')
+gravel_values.append(int(dust_value))
 
 
 
-sns.set_palette("Pastel1",12)
+sns.set_palette("Pastel1",20)
 
 #with plt.xkcd():
 if True: #below to retain indent

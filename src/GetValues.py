@@ -21,10 +21,15 @@ display_ccy = cmc_config['display_ccy']
 val.set_display_ccy(display_ccy)
 print('start cmc')
 for coin, balance in simple_balances['crypto'].items():
-    cmc_id = coin_config[coin]['coinmarketcap_id']
-    url = cmc_config['url'] + cmc_id + '?convert=' + display_ccy
-    print(url)
-    val.add_result(coin, balance, float(json.loads(urllib.request.urlopen(url).read())[0]['price_' + display_ccy.lower()]))
+    #if we have a coin thats not defined in config, add to missing coin section
+    if coin_config.get(coin):
+        cmc_id = coin_config.get(coin)['coinmarketcap_id']
+        url = cmc_config['url'] + cmc_id + '?convert=' + display_ccy
+        print(url)
+        val.add_result(coin, balance, float(json.loads(urllib.request.urlopen(url).read())[0]['price_' + display_ccy.lower()]))
+    else:
+        val.add_missing_coin(coin)
+
 print('end cmc')
 
 # get fiat prices from fixer.io

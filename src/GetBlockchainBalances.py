@@ -18,14 +18,14 @@ bal = cryptolib.Balances()
 
 eth_config = wallet_config['ethereum']
 api_key = api_config['etherscan']['api_key']
-
 # get the simple ETH balances for each address
 print('start etherscan')
 api = Account(address=eth_config['addresses'], api_key=api_key)
-for address in api.get_balance_multiple():
+multi_balances = api.get_balance_multiple()
+for address in multi_balances:
     print(address)
     bal.add_balance('ETH', int(address['balance']) / coin_config['ETH']['etherscan_units'],
-                                 'from ETH address {addr}'.format(addr=address['account']))
+                                'from ETH address {addr}'.format(addr=address['account']))
 
 # Now add the tokens from each address
 

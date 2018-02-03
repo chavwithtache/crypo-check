@@ -7,6 +7,7 @@ import logging
 import os
 import arrow
 import numpy as np
+import math
 
 logger = logging.getLogger('crypto_toddlerTrading')
 hdlr = logging.FileHandler('../logs/crypto_toddler_trading.log')
@@ -15,6 +16,9 @@ hdlr.setFormatter(formatter)
 logger.addHandler(hdlr)
 logger.setLevel(logging.INFO)
 
+
+def round_up(f, dp):
+    return math.ceil(f * 10**dp) / 10**dp
 
 class ToddlerTrading(object):
     def __init__(self):
@@ -25,7 +29,7 @@ class ToddlerTrading(object):
         self.reconnect_client()
         self.reload_orders()
 
-        self.Pair = collections.namedtuple('Pair', 'market size spread')
+        self.Pair = collections.namedtuple('Pair', 'market size spread accumulate_asset')
 
         self.trade_pairs = []
         self.error_markets = {}
@@ -39,8 +43,8 @@ class ToddlerTrading(object):
     def reload_orders(self):
         self.orders = self.gdax_auth_client.get_orders()
 
-    def add_pair(self, market, size, spread, sentiment_or=-1.0):
-        self.trade_pairs.append(self.Pair(market=market, size=size, spread=spread))
+    def add_pair(self, market, size, spread, sentiment_or=-1.0, accumulate_asset=False):
+        self.trade_pairs.append(self.Pair(market=market, size=size, spread=spread, accumulate_asset=accumulate_asset))
         self.error_markets[market] = False
         self.sentiment_or[market] = sentiment_or
 
@@ -58,12 +62,14 @@ class ToddlerTrading(object):
         sentiment = self.calc_sentiment(market) if self.sentiment_or[market] == -1.0 else self.sentiment_or[market]
 
         sell_price = round(mid_price + trade_pair.spread * sentiment, 2)
-        trade1_id = self.do_trade(trade_pair, 'sell', sell_price)
+        sell_size = (sell_price-trade_pair.spread)*trade_pair.size/sell_price if trade_pair.accumulate_asset else trade_pair.size
+        sell_size = round_up(sell_size, 3)
+        trade1_id = self.do_trade(market, 'sell', sell_price, sell_size)
 
         if trade1_id is not None:
             # first trade succeeded. Do second trade
             buy_price = round(mid_price - trade_pair.spread * (1 - sentiment), 2)
-            trade2_id = self.do_trade(trade_pair, 'buy', buy_price)
+            trade2_id = self.do_trade(market, 'buy', buy_price, trade_pair.size)
 
             if trade2_id is not None:
                 # Both trades executed successfully. Happy days
@@ -78,9 +84,7 @@ class ToddlerTrading(object):
             self.error_markets[market] = True
             logger.info('First trade failed. Trade_pair {} disabled'.format(market))
 
-    def do_trade(self, trade_pair, side, price):
-        market = trade_pair.market
-        size = trade_pair.size
+    def do_trade(self, market, side, price, size):
 
         print('{} {} {} @ {}'.format(side, size, market, price))
         if side == 'sell':
@@ -90,11 +94,14 @@ class ToddlerTrading(object):
 
         logger.info(result)
 
-        # the only success is if result is a dictionary with an id key
+        # the success is if result is a dictionary with an id key AND 'status' != 'rejected'
         try:
             new_trade_id = result['id']
-            with open('../data/toddler_trading/{}/{}'.format(market, new_trade_id), 'w'):
-                pass
+            if result['status'] == 'rejected':
+                new_trade_id = None
+            else:
+                with open('../data/toddler_trading/{}/{}'.format(market, new_trade_id), 'w'):
+                    pass
         except:
             new_trade_id = None
 
@@ -181,8 +188,12 @@ class ToddlerTrading(object):
 
 test = ToddlerTrading()
 #test.add_pair('ETH-EUR', 10, 2.5)
-test.add_pair('ETH-EUR', 8, 2.0, 0.75)  # NB I AM FORCING SENTIMENT TO BE BULLISH HERE
-test.add_pair('LTC-EUR', 10, 0.4)
+#test.add_pair('ETH-EUR', 10, 6.0, sentiment_or=0.9)  # NB I AM FORCING SENTIMENT TO BE VERY BULLISH HERE
+#test.add_pair('ETH-EUR', 5, 2.0)
+test.add_pair('ETH-EUR', 5, 20.0, sentiment_or=0.95, accumulate_asset=True)
+#test.add_pair('ETH-EUR', 2.5, 4.0, sentiment_or=0.9)
+test.add_pair('LTC-EUR', 1, 2.0, accumulate_asset=True)
+test.add_pair('BCH-EUR', 1, 20.0, sentiment_or=0.8, accumulate_asset=True)
 #test.add_pair('BTC-EUR', 0.1, 20.0)
 #test.add_pair('BTC-GBP', 0.1, 18.0)
 

@@ -37,8 +37,15 @@ class Balances(object):
     def get_aggregated_balances(self, coin_config):
         simple_balances = {"crypto": {}, "fiat": {}, "iconomi_fund": {}}
         for coin, balances in self.coins.items():
-            simple_balances[coin_config[coin]['type']][coin] = sum(
+            if coin_config.get(coin):
+                _type = coin_config[coin]['type']
+            else:
+                _type = 'crypto'
+
+            simple_balances[_type][coin] = sum(
                 [x['balance'] for x in balances['balances']])
+
+
         return simple_balances
 
     def write_balances(self, filename='crypto_balances'):
@@ -58,6 +65,7 @@ class Valuation(object):
         self.balances = {}
         self.prices = {}
         self.values = {}
+        self.missing_coins = []
         self.display_ccy = display_ccy
         self.iconomi_value = 0.0
 
@@ -65,6 +73,9 @@ class Valuation(object):
         self.balances[coin] = balance
         self.prices[coin] = price
         self.values[coin] = price * balance
+
+    def add_missing_coin(self, coin):
+        self.missing_coins.append(coin)
 
     def total_value(self):
         return sum([self.values[x] for x in self.values])
@@ -81,7 +92,8 @@ class Valuation(object):
                             'values': self.values,
                             'total_value': '{:0,.2f}'.format(self.total_value()),
                             'display_ccy': self.display_ccy,
-                            'iconomi_value': self.iconomi_value}
+                            'iconomi_value': self.iconomi_value,
+                            'missing_coins': self.missing_coins}
 
     def write_valuation(self):
         write_dictionary_as_json_file('crypto_values', self.valuation(), True)

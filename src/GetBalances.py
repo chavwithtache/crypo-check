@@ -32,23 +32,29 @@ for account in accounts.data:
     bal.add_balance(account['currency'], float(account['balance']['amount']),
                                  'from Coinbase {addr}'.format(addr=account['name']))
 print('end coinbase')
+
 # GDAX
 # pip install gdax
-print('start GDAX')
-gdax_config = api_config['gdax']
 
-gdax_auth_client = gdax.AuthenticatedClient(gdax_config['api_key'], gdax_config['api_secret'], gdax_config['passphrase'])
-for account in gdax_auth_client.get_accounts():
-    print(account)
-    bal.add_balance(account['currency'], float(account['balance']),
-                                 'from GDAX {addr}'.format(addr=account['id']))
-print('end GDAX')
+if True:
+    print('start GDAX')
+    gdax_config = api_config['gdax']
+
+    gdax_auth_client = gdax.AuthenticatedClient(gdax_config['api_key'], gdax_config['api_secret'], gdax_config['passphrase'])
+    for account in gdax_auth_client.get_accounts():
+        print(account)
+        bal.add_balance(account['currency'], float(account['balance']),
+                                     'from GDAX {addr}'.format(addr=account['id']))
+    print('end GDAX')
+
+
+
 #Binance
 
 # pip install python-binance
 # also requires Visual C++ Build Tools.. from here http://landinghub.visualstudio.com/visual-cpp-build-tools
 
-#NOT WORKING.. COMMENT OUT FOR NOW
+#print('BINANCE DISABLED - CHECK AND REENABLE')
 if True:
     print('start binance')
     binance_config = api_config['binance']
