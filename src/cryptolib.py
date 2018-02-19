@@ -1,19 +1,40 @@
 import json
 import datetime
+import urllib.request
+
 
 
 class Config(object):
+    default_path = '../config/config.json'
 
-    def __init__(self):
-        self.config = json.loads(open('../config/config.json').read())
+    def __init__(self, path = default_path):
+        self.config = json.loads(open(path).read())
 
     def starting_balances(self): return self.config['starting_balances']
 
     def api_config(self): return self.config['api_config']
 
-    def coin_config(self):  return self.config['coins']
-
     def wallet_config(self): return self.config['wallets']
+
+    def coin_config(self): return self.config['coins']
+
+    def resolve_coin(self, coin):
+        c = self.config['coins'].get(coin)
+        if c:
+            if c['type'] == 'link':
+                return c['parent']
+        return coin
+
+class CoinMarketCap(object):
+    def __init__(self, base_url, display_ccy):
+        self.__base_url = base_url
+        self.__display_ccy = display_ccy
+
+    def get_price(self, coin):
+        full_url = self.__base_url + coin + '?convert=' + self.__display_ccy
+        print(full_url)
+        res = json.loads(urllib.request.urlopen(full_url).read())
+        return res[0]['price_' + self.__display_ccy.lower()]
 
 
 class Balances(object):
@@ -47,6 +68,9 @@ class Balances(object):
 
 
         return simple_balances
+
+    def get_all_balances(self):
+        return self.coins
 
     def write_balances(self, filename='crypto_balances'):
         write_dictionary_as_json_file(filename, self.coins)

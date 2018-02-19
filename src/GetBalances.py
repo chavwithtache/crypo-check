@@ -29,7 +29,8 @@ coinbase_config = api_config['coinbase']
 client = cbClient(coinbase_config['api_key'], coinbase_config['api_secret'])
 accounts = client.get_accounts()
 for account in accounts.data:
-    bal.add_balance(account['currency'], float(account['balance']['amount']),
+    coin = cfg.resolve_coin(account['currency'].upper())
+    bal.add_balance(coin, float(account['balance']['amount']),
                                  'from Coinbase {addr}'.format(addr=account['name']))
 print('end coinbase')
 
@@ -43,7 +44,8 @@ if True:
     gdax_auth_client = gdax.AuthenticatedClient(gdax_config['api_key'], gdax_config['api_secret'], gdax_config['passphrase'])
     for account in gdax_auth_client.get_accounts():
         print(account)
-        bal.add_balance(account['currency'], float(account['balance']),
+        coin = cfg.resolve_coin(account['currency'].upper())
+        bal.add_balance(coin, float(account['balance']),
                                      'from GDAX {addr}'.format(addr=account['id']))
     print('end GDAX')
 
@@ -64,7 +66,8 @@ if True:
     print(bnb_balances)
     nonEmpty = [bnbbal for bnbbal in bnb_balances if float(bnbbal['free']) != 0 or  float(bnbbal['locked']) != 0]
     for bnbbal in nonEmpty:
-        bal.add_balance(bnbbal['asset'], float(bnbbal['free']) + float(bnbbal['locked']), 'from Binance')
+        coin = cfg.resolve_coin(bnbbal['asset'].upper())
+        bal.add_balance(coin, float(bnbbal['free']) + float(bnbbal['locked']), 'from Binance')
     print('end binance')
 
 
@@ -74,7 +77,8 @@ print('start Bitfinex')
 bfx_config = api_config['bitfinex']
 bfx_auth_client = bfxClient(bfx_config['api_key'], bfx_config['api_secret'])
 for account in bfx_auth_client.balances():
-    bal.add_balance(account['currency'].upper(), float(account['amount']),
+    coin = cfg.resolve_coin(account['currency'].upper())
+    bal.add_balance(coin, float(account['amount']),
                                  'from Bitfinex')
 print('end Bitfinex')
 

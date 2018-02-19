@@ -13,7 +13,7 @@ coin_config = cfg.coin_config()
 
 arrow_timestamps = []
 totals = []
-lookback_days = 14
+lookback_days = 91
 chart_points = 400
 
 # get appropriate number of points for chart for date range

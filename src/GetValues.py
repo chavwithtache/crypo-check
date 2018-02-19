@@ -3,6 +3,8 @@ import json
 import urllib.request
 import cryptolib
 
+
+
 val = cryptolib.Valuation()
 bal = cryptolib.Balances()
 
@@ -19,17 +21,19 @@ simple_balances = bal.load_aggregated_balances()
 cmc_config = api_config['coinmarketcap']
 display_ccy = cmc_config['display_ccy']
 val.set_display_ccy(display_ccy)
+
+
 print('start cmc')
+cmc = cryptolib.CoinMarketCap(cmc_config['url'], display_ccy)
 for coin, balance in simple_balances['crypto'].items():
     #if we have a coin thats not defined in config, add to missing coin section
-    if coin_config.get(coin):
-        cmc_id = coin_config.get(coin)['coinmarketcap_id']
-        url = cmc_config['url'] + cmc_id + '?convert=' + display_ccy
-        print(url)
-        val.add_result(coin, balance, float(json.loads(urllib.request.urlopen(url).read())[0]['price_' + display_ccy.lower()]))
+    coin_config_coin = coin_config.get(coin)
+    if coin_config_coin:
+        cmc_id = coin_config_coin['coinmarketcap_id']
+        price = cmc.get_price(cmc_id)
+        val.add_result(coin, balance, float(price))
     else:
         val.add_missing_coin(coin)
-
 print('end cmc')
 
 # get fiat prices from fixer.io
