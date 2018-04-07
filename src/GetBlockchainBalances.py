@@ -1,6 +1,4 @@
-import urllib.request
-from etherscan.tokens import Tokens
-from etherscan.accounts import Account
+import requests
 import json
 import cryptolib
 
@@ -17,27 +15,25 @@ bal = cryptolib.Balances()
 # pip install etherscan
 
 eth_config = wallet_config['ethereum']
-api_key = api_config['etherscan']['api_key']
+api_key = api_config['ethplorer']['api_key']
+url_root = api_config['ethplorer']['url']
 # get the simple ETH balances for each address
-print('start etherscan')
-api = Account(address=eth_config['addresses'], api_key=api_key)
-multi_balances = api.get_balance_multiple()
-for address in multi_balances:
-    print(address)
-    bal.add_balance('ETH', int(address['balance']) / coin_config['ETH']['etherscan_units'],
-                                'from ETH address {addr}'.format(addr=address['account']))
-
-# Now add the tokens from each address
-
-for token in coin_config:
-    contract_address = coin_config[token].get('erc20_token_contract_address')
-    if contract_address != None:
-        api = Tokens(contractaddress=contract_address, api_key=api_key)
-        balance = 0
-        for address in eth_config['addresses']:
-            bal.add_balance(token, int(api.get_token_balance(address=address)) / coin_config[token][
-                                             'etherscan_units'], 'from ETH address {addr}'.format(addr=address))
-print('end etherscan')
+print('start ethplorer')
+for eth_address in eth_config['addresses']:
+    req = requests.get('{}getAddressInfo/{}?apiKey={}'.format(url_root, eth_address, api_key))
+    if req.ok:
+        data = req.json()
+        bal.add_balance('ETH', data['ETH']['balance'],
+                        'from ETH address {}'.format(eth_address))
+        for token in data['tokens']:
+            token_info = token['tokenInfo']
+            if token_info['symbol'] != '':
+                bal.add_balance(token_info['symbol'], token['balance'] / (10 ** int(token_info['decimals'])),
+                                'from ETH address {}'.format(eth_address))
+            elif token_info['name'] != '':
+                bal.add_balance(token_info['name'], token['balance'] / (10 ** int(token_info['decimals'])),
+                                'from ETH address {}. NO SYMBOL. DODGY.'.format(eth_address))
+print('end ethplorer')
 
 #Get BCH from Blockchair
 print('start blockchair')
@@ -45,7 +41,7 @@ bch_config = wallet_config['bitcoin-cash']
 for address in bch_config['addresses']:
     bch_url = api_config['blockchair']['url'] + '?q=recipient({addr})'.format(addr=address)
     print(bch_url)
-    blockchair_result = json.loads(urllib.request.urlopen(bch_url).read())
+    blockchair_result = requests.get(bch_url).json()
     print(blockchair_result)
     bal.add_balance('BCH', int(blockchair_result['data'][0]['value']) / coin_config['BCH']['blockchair_units'],
                                  'from BCH address {addr}'.format(addr=address))

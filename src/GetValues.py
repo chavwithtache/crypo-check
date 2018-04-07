@@ -54,7 +54,10 @@ iconomi_config = api_config['iconomi_blx']
 usdrate = fxrates['rates']['USD']
 iconomi_value = 0.0
 for coin, balance in simple_balances['iconomi_fund'].items():
-    price_usd = float(json.loads(urllib.request.urlopen(iconomi_config['url']+coin+'-chart').read())['chartData'].pop()['y']['tokenPrice'])
+    print(iconomi_config['url']+coin+'-chart')
+    data=json.loads(urllib.request.urlopen(iconomi_config['url']+coin+'-chart').read())['chartData'].pop()['y']['tokenPrice']
+    print(data)
+    price_usd = float(data)
     iconomi_value += balance * price_usd / usdrate
     val.add_result(coin, balance, price_usd / usdrate)
 val.set_iconomi_value(iconomi_value)
