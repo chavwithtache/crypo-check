@@ -1,22 +1,66 @@
 import json
-import datetime
 import urllib.request
+import asyncio
+from datetime import datetime
+import arrow
+import os
+import pandas as pd
 
+
+def get_file_series(root):
+    df = pd.DataFrame([(filename[0:17], filename) for filename in
+                       os.listdir(root)
+                       if filename.endswith("_crypto_values.json")], columns=['Date', 'Filename'])
+    df['Date'] = pd.to_datetime(df['Date'])
+    df.set_index('Date', inplace=True)
+    return df['Filename']
+
+
+def get_diff_df(root, period):
+    s_files = get_file_series(root)
+    last_day = s_files.last(period)
+
+    current_time_stamp, current_file = (arrow.get(last_day.index[-1]), last_day.iloc[-1])
+    previous_time_stamp, previous_file = (arrow.get(last_day.index[0]), last_day.iloc[0])
+
+    print('from {} to {}'.format(previous_time_stamp.humanize(), current_time_stamp.humanize()))
+
+    s_current = pd.Series(
+        json.loads(open('../data/archive/crypto_values/{}'.format(current_file)).read())['data']['values'])
+    s_current.name = 'values_new'
+
+    print('../data/archive/crypto_values/{}'.format(previous_file))
+    s_previous = pd.Series(
+        json.loads(open('../data/archive/crypto_values/{}'.format(previous_file)).read())['data']['values'])
+    s_previous.name = 'values_prev'
+
+    df_all = pd.concat([s_current, s_previous], axis=1)
+    df_all['diff'] = df_all['values_new'] - df_all['values_prev']
+    df_all['diff_pc'] = (df_all['values_new'] - df_all['values_prev']) / df_all['values_prev']
+    df_all.sort_values(by='diff_pc', inplace=True, ascending=False)
+    return df_all
+
+
+dfAll = get_diff_df('../data/archive/crypto_values', '1d')
 
 
 class Config(object):
     default_path = '../config/config.json'
 
-    def __init__(self, path = default_path):
+    def __init__(self, path=default_path):
         self.config = json.loads(open(path).read())
 
-    def starting_balances(self): return self.config['starting_balances']
+    def starting_balances(self):
+        return self.config['starting_balances']
 
-    def api_config(self): return self.config['api_config']
+    def api_config(self):
+        return self.config['api_config']
 
-    def wallet_config(self): return self.config['wallets']
+    def wallet_config(self):
+        return self.config['wallets']
 
-    def coin_config(self): return self.config['coins']
+    def coin_config(self):
+        return self.config['coins']
 
     def resolve_coin(self, coin):
         c = self.config['coins'].get(coin)
@@ -24,17 +68,6 @@ class Config(object):
             if c['type'] == 'link':
                 return c['parent']
         return coin
-
-class CoinMarketCap(object):
-    def __init__(self, base_url, display_ccy):
-        self.__base_url = base_url
-        self.__display_ccy = display_ccy
-
-    def get_price(self, coin):
-        full_url = self.__base_url + coin + '?convert=' + self.__display_ccy
-        print(full_url)
-        res = json.loads(urllib.request.urlopen(full_url).read())
-        return res[0]['price_' + self.__display_ccy.lower()]
 
 
 class Balances(object):
@@ -65,7 +98,6 @@ class Balances(object):
 
             simple_balances[_type][coin] = sum(
                 [x['balance'] for x in balances['balances']])
-
 
         return simple_balances
 
@@ -112,12 +144,12 @@ class Valuation(object):
 
     def valuation(self):
         return {'balances': self.balances,
-                            'prices': self.prices,
-                            'values': self.values,
-                            'total_value': '{:0,.2f}'.format(self.total_value()),
-                            'display_ccy': self.display_ccy,
-                            'iconomi_value': self.iconomi_value,
-                            'missing_coins': self.missing_coins}
+                'prices': self.prices,
+                'values': self.values,
+                'total_value': '{:0,.2f}'.format(self.total_value()),
+                'display_ccy': self.display_ccy,
+                'iconomi_value': self.iconomi_value,
+                'missing_coins': self.missing_coins}
 
     def write_valuation(self):
         write_dictionary_as_json_file('crypto_values', self.valuation(), True)
@@ -125,12 +157,25 @@ class Valuation(object):
         write_dictionary_as_json_file('../../../../Google Drive/crypto_values', self.valuation())
 
 
+class CoinMarketCap(object):
+    def __init__(self, base_url: str, display_ccy: str):
+        self._base_url = base_url
+        self._display_ccy = display_ccy
+
+    def get_price(self, coin):
+        full_url = self._base_url + coin + '?convert=' + self._display_ccy
+        print(full_url)
+        res = json.loads(urllib.request.urlopen(full_url).read())
+        return res[0]['price_' + self._display_ccy.lower()]
+
+
 def write_dictionary_as_json_file(filename, dictionary, archive=False):
     output_dictionary = {'data': dictionary}
-    output_dictionary['timestamp'] = datetime.datetime.now().isoformat()
+    output_dictionary['timestamp'] = datetime.now().isoformat()
     with open('../data/' + filename + '.json', 'w') as f:
         f.write(json.dumps(output_dictionary, indent=4))
     if archive:
-        archive_filename = '../data/archive/' + filename + '/' + output_dictionary['timestamp'][0:19].replace(':', '') + '_' + filename + '.json'
+        archive_filename = '../data/archive/' + filename + '/' + output_dictionary['timestamp'][0:19].replace(':',
+                                                                                                              '') + '_' + filename + '.json'
         with open(archive_filename, 'w') as fa:
             fa.write(json.dumps(output_dictionary, indent=4))
