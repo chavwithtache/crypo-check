@@ -18,7 +18,8 @@ logger.setLevel(logging.INFO)
 
 
 def round_up(f, dp):
-    return math.ceil(f * 10**dp) / 10**dp
+    return math.ceil(f * 10 ** dp) / 10 ** dp
+
 
 class ToddlerTrading(object):
     def __init__(self):
@@ -62,7 +63,8 @@ class ToddlerTrading(object):
         sentiment = self.calc_sentiment(market) if self.sentiment_or[market] == -1.0 else self.sentiment_or[market]
 
         sell_price = round(mid_price + trade_pair.spread * sentiment, 2)
-        sell_size = (sell_price-trade_pair.spread)*trade_pair.size/sell_price if trade_pair.accumulate_asset else trade_pair.size
+        sell_size = (
+                            sell_price - trade_pair.spread) * trade_pair.size / sell_price if trade_pair.accumulate_asset else trade_pair.size
         sell_size = round_up(sell_size, 3)
         trade1_id = self.do_trade(market, 'sell', sell_price, sell_size)
 
@@ -159,7 +161,7 @@ class ToddlerTrading(object):
         to_time = arrow.get(public_client.get_time()['iso']).shift(seconds=-5)
         from_time = to_time.shift(minutes=-lookback_mins)
 
-        #if the market is vs EUR or GBP, check the USD market as it is much more liquid
+        # if the market is vs EUR or GBP, check the USD market as it is much more liquid
         liq_market = market[0:4] + 'USD' if market[4:7] in ['EUR', 'GBP'] else market
 
         result = public_client.get_product_historic_rates(product_id=liq_market, start=from_time.isoformat()[:19],
@@ -178,26 +180,27 @@ class ToddlerTrading(object):
         # future close
 
         logger.info(
-            'market {} (used {}), last {}, next {}. Going {} by {:5.4f}% Calculated sentiment:{}'.format(market, liq_market,  _last, _next,
-                                                                                               'up' if _next > _last else 'down',
-                                                                                               100 * pc_move,
-                                                                                               sentiment))
+            'market {} (used {}), last {}, next {}. Going {} by {:5.4f}% Calculated sentiment:{}'.format(market,
+                                                                                                         liq_market,
+                                                                                                         _last, _next,
+                                                                                                         'up' if _next > _last else 'down',
+                                                                                                         100 * pc_move,
+                                                                                                         sentiment))
 
         return sentiment
 
 
 test = ToddlerTrading()
-#test.add_pair('ETH-EUR', 10, 2.5)
-#test.add_pair('ETH-EUR', 10, 6.0, sentiment_or=0.9)  # NB I AM FORCING SENTIMENT TO BE VERY BULLISH HERE
-#test.add_pair('ETH-EUR', 5, 2.0)
-test.add_pair('ETH-EUR', 5, 20.0, sentiment_or=0.95, accumulate_asset=True)
-#test.add_pair('ETH-EUR', 2.5, 4.0, sentiment_or=0.9)
-test.add_pair('LTC-EUR', 1, 5.0, accumulate_asset=True)
-test.add_pair('BCH-EUR', 1, 20.0, sentiment_or=0.8, accumulate_asset=True)
-#test.add_pair('BTC-EUR', 0.1, 20.0)
-#test.add_pair('BTC-GBP', 0.1, 18.0)
+# test.add_pair('ETH-EUR', 10, 2.5)
+# test.add_pair('ETH-EUR', 10, 6.0, sentiment_or=0.9, accumulate_asset=True)  # NB I AM FORCING SENTIMENT TO BE VERY BULLISH HERE
+# test.add_pair('ETH-EUR', 5, 2.0)
+# test.add_pair('ETH-EUR', 5, 20.0, sentiment_or=0.95, accumulate_asset=True)
+test.add_pair('ETH-EUR', 4, 10.0, accumulate_asset=True)
+# test.add_pair('LTC-EUR', 1, 5.0, accumulate_asset=True)
+# test.add_pair('BCH-EUR', 1, 20.0, sentiment_or=0.8, accumulate_asset=True)
+# test.add_pair('BTC-EUR', 0.1, 20.0)
+# test.add_pair('BTC-GBP', 0.1, 18.0)
 
 logger.info('started')
 while True:
     test.check_products()
-

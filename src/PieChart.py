@@ -34,76 +34,97 @@ def get_chart_timeseries(root, period='1M', chart_points=400):
     return timestamps, totals, date_labels
 
 
-def get_value_data_series(data_file, name):
-    # Get PIE Data
+def get_series_from_data(data_file, data_item, name):
     crypto_data = json.loads(open(data_file).read())
-    crypto_values_raw = crypto_data['data']['values']
-    total_value_str = crypto_data['data']['total_value']
-    crypto_values = {}
-
-    # Make all Iconomi Funds into a single wedge
-    iconomi_value = 0.0
-    for coin in crypto_values_raw:
-        if coin in coin_config:
-            if coin_config.get(coin)['type'] == 'iconomi_fund':
-                iconomi_value += crypto_values_raw[coin]
-            else:
-                crypto_values[coin] = crypto_values_raw[coin]
-    crypto_values['ICONOMI'] = iconomi_value
-    s = pd.Series(crypto_values)
+    crypto_values_raw = crypto_data['data'][data_item]
+    s = pd.Series(crypto_values_raw)
     s.name = name
-    return s, total_value_str, iconomi_value
+    return s
+
+
+# def get_value_data_series(data_file, name):
+#     # Get PIE Data
+#     crypto_data = json.loads(open(data_file).read())
+#     crypto_values_raw = crypto_data['data']['values']
+#     total_value_str = crypto_data['data']['total_value']
+#     crypto_values = {}
+#
+#     # Make all Iconomi Funds into a single wedge
+#     iconomi_value = 0.0
+#     for coin in crypto_values_raw:
+#         if coin in coin_config:
+#             if coin_config.get(coin)['type'] == 'iconomi_fund':
+#                 iconomi_value += crypto_values_raw[coin]
+#             else:
+#                 crypto_values[coin] = crypto_values_raw[coin]
+#     crypto_values['ICONOMI'] = iconomi_value
+#     s = pd.Series(crypto_values)
+#     s.name = name
+#     return s, total_value_str, iconomi_value
 
 
 def get_piechart_data_and_diff(root, period='1D'):
-    sFiles = cryptolib.get_file_series(root).last(period)
-    from_file = sFiles.iloc[0]
-    to_file = sFiles.iloc[-1]
-    to_date = sFiles.index[-1]
+    s_files = cryptolib.get_file_series(root).last(period)
+    from_file = s_files.iloc[0]
+    to_file = s_files.iloc[-1]
+    to_date = s_files.index[-1]
 
-    s_from, _,_ = get_value_data_series(root + '/' + from_file, 'from')
-    s_to, total_value_str,iconomi_value = get_value_data_series(root + '/' + to_file, 'value')
-    df = pd.concat([s_from, s_to], axis=1)
-    df['change'] = (df['value'] - df['from']) / df['from']
+    s_balances_t = get_series_from_data(root + '/' + to_file, 'balances', 'balances_t')
+    s_prices_t = get_series_from_data(root + '/' + to_file, 'prices', 'prices_t')
+    s_prices_t_1 = get_series_from_data(root + '/' + from_file, 'prices', 'prices_t_1')
+    df = pd.concat([s_balances_t, s_prices_t, s_prices_t_1], axis=1)
+    df['is_iconomi'] = [coin_config[coin]['type'] == 'iconomi_fund' for coin in list(df.index)]
+    df['value'] = df['balances_t'] * df['prices_t']
+    df['value_t1_prices'] = df['balances_t'] * df['prices_t_1']
+    df['move_from_prices'] = df['value'] - df['value_t1_prices']
+    total_value = df['value'].sum(axis=0)
+    total_value_str = '{:0,.0f}'.format(total_value)
+    # roll up iconomi funds
+    s_iconomi = df[df['is_iconomi'] == True].sum(axis=0)
+    s_iconomi.name = 'ICONOMI'
+    iconomi_value = s_iconomi['value']
+    df = df[df['is_iconomi'] == False].append(s_iconomi)
+    # this is everything with iconomi rolled up to a single item.
+    # next do a new df for ALTS
+    gravel_max = total_value / 100
+    dust_max = gravel_max / 10
+    df['value_category'] = df.apply(
+        lambda row: 'DUST' if row['value'] < dust_max else 'GRAVEL' if row['value'] < gravel_max else 'MAIN', axis=1)
+    df_main = df[df['value_category'] == 'MAIN']
+    df_gravel = df[df['value_category'] == 'GRAVEL']
+    s_dust_total = df[df['value_category'] == 'DUST'].sum(axis=0)
+
+    s_gravel_plus_dust_total = df_gravel.sum(axis=0) + s_dust_total
+    s_gravel_plus_dust_total.name = 'SHITCOINS'
+    df_main = df_main.append(s_gravel_plus_dust_total)
+
+    s_dust_total.name = 'THE_DUST'
+    df_gravel = df_gravel.append(s_dust_total)
+
+    main_pie_data = finalise_chart_data(df_main, 'SHITCOINS')
+    gravel_pie_data = finalise_chart_data(df_gravel, 'THE_DUST')
+    return main_pie_data, gravel_pie_data, total_value_str, iconomi_value, to_date.strftime('%Y-%m-%d %H:%M')
+
+
+def finalise_chart_data(df, last=None):
+    df['change'] = df['move_from_prices'] / df['value_t1_prices']
+
     df.sort_values(by='value', ascending=False, inplace=True)
+    if last:
+        new_index = list(df.index)
+        new_index.remove(last)
+        new_index = new_index + [last]
+        df = df.reindex(new_index)
     df.reset_index(inplace=True)
     df['label'] = df['index'] + str(df['change'])
     df['label'] = df.apply(lambda row: row['index'] + ' ({:.2f}%)'.format(row['change'] * 100), axis=1)
-    return df[['label', 'value']].to_dict(orient='records'), total_value_str, iconomi_value, to_date.strftime('%Y-%m-%d %H:%M')
+    return df[['label', 'value']].to_dict(orient='list')
 
 
 datetimes, totals, date_labels = get_chart_timeseries('../data/archive/crypto_values', '30D')
-sorted_data, total_value_str, iconomi_value, timestamp = get_piechart_data_and_diff('../data/archive/crypto_values', '1D')
-
-# Data to plot
-labels = []
-values = []
-gravel_value = 0.0
-gravel_labels = []
-gravel_values = []
-dust_value = 0.0
-gravel_max = 4000.0
-dust_max = 200.00
-for dic in sorted_data:
-    value = dic['value']
-    label = dic['label']
-    if value > gravel_max:
-        labels.append(label)
-        values.append(int(value))
-    elif value > dust_max:
-        gravel_value += value
-        gravel_labels.append(label)
-        gravel_values.append(int(value))
-    else:
-        dust_value += value
-
-# if gravel_value + dust_value > gravel_max:
-labels.append('ALTCOINS')
-values.append(int(gravel_value + dust_value))
-
-# if dust_value > 5:
-gravel_labels.append('SHITCOINS')
-gravel_values.append(int(dust_value))
+main_pie_data, gravel_pie_data, total_value_str, iconomi_value, timestamp = get_piechart_data_and_diff(
+    '../data/archive/crypto_values',
+    '1D')
 
 sns.set_palette("Pastel1", 20)
 
@@ -122,16 +143,16 @@ if True:  # below to retain indent
     # ax1.set_title('Total Value: ' + crypto_data['data']['total_value'])  # , bbox={'facecolor': '0.8', 'pad': 3})
     # plt.rcParams.update({'font.size': 14}) #adjust font size; not really needed
 
-    ax1.pie(values,
-            labels=labels,
+    ax1.pie(main_pie_data['value'],
+            labels=main_pie_data['label'],
             autopct='%1.1f%%',
             pctdistance=0.8,
             startangle=0)
 
     ax1.axis('equal')  # ensure pie is round
 
-    axMini.pie(gravel_values,
-               labels=gravel_labels,
+    axMini.pie(gravel_pie_data['value'],
+               labels=gravel_pie_data['label'],
                autopct='%1.1f%%',
                pctdistance=0.8,
                startangle=0)
@@ -150,5 +171,4 @@ if True:  # below to retain indent
 
     # short term hack so i can see it!
     plt.savefig('../../../../Google Drive/crypto_pie.jpg', bbox_inches='tight')
-    #plt.show()
-
+    # plt.show()
