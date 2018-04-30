@@ -95,14 +95,14 @@ def get_piechart_data_and_diff(root, period='1D'):
     s_dust_total = df[df['value_category'] == 'DUST'].sum(axis=0)
 
     s_gravel_plus_dust_total = df_gravel.sum(axis=0) + s_dust_total
-    s_gravel_plus_dust_total.name = 'SHITCOINS'
+    s_gravel_plus_dust_total.name = 'ALTS'
     df_main = df_main.append(s_gravel_plus_dust_total)
 
-    s_dust_total.name = 'THE_DUST'
+    s_dust_total.name = 'DUST'
     df_gravel = df_gravel.append(s_dust_total)
 
-    main_pie_data = finalise_chart_data(df_main, 'SHITCOINS')
-    gravel_pie_data = finalise_chart_data(df_gravel, 'THE_DUST')
+    main_pie_data = finalise_chart_data(df_main, 'ALTS')
+    gravel_pie_data = finalise_chart_data(df_gravel, 'DUST')
     return main_pie_data, gravel_pie_data, total_value_str, iconomi_value, to_date.strftime('%Y-%m-%d %H:%M')
 
 
@@ -136,8 +136,8 @@ if True:  # below to retain indent
     # gs = grd.GridSpec(2, 1, height_ratios=[2, 1])
     # ax1 = plt.subplot(gs[0])
     # ax2 = plt.subplot(gs[1])
-    ax1 = fig.add_axes([0.1, 0.44, 0.9, 0.9])  # big pie
-    ax2 = fig.add_axes([0.1, 0.1, 0.9, 0.4])
+    ax1 = fig.add_axes([0.05, 0.44, 0.9, 0.9])  # big pie
+    ax2 = fig.add_axes([0.1, 0.1, 0.95, 0.4])
     axMini = fig.add_axes([0.53, 0.89, 0.45, 0.4])
 
     # ax1.set_title('Total Value: ' + crypto_data['data']['total_value'])  # , bbox={'facecolor': '0.8', 'pad': 3})

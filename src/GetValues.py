@@ -32,8 +32,9 @@ for coin, balance in simple_balances['crypto'].items():
         val.add_result(coin, balance, float(price))
     else:
         val.add_missing_coin(coin)
-
 print('end cmc')
+
+def
 
 # get fiat prices from fixer.io
 print('start fixer.io')

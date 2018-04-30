@@ -41,7 +41,7 @@ def get_diff_df(root, period):
     return df_all
 
 
-dfAll = get_diff_df('../data/archive/crypto_values', '1d')
+
 
 
 class Config(object):
