@@ -7,7 +7,7 @@ import cryptolib
 cfg = cryptolib.Config()
 wallet_config = cfg.wallet_config()
 api_config = cfg.api_config()
-coin_config = cfg.coin_config()
+#coin_config = cfg.coin_config()
 
 bal = cryptolib.Balances()
 
@@ -38,12 +38,14 @@ print('end ethplorer')
 #Get BCH from Blockchair
 print('start blockchair')
 bch_config = wallet_config['bitcoin-cash']
+blockchair_url = api_config['blockchair']['url']
+blockchair_units = api_config['blockchair']['blockchair_units']
 for address in bch_config['addresses']:
-    bch_url = api_config['blockchair']['url'] + '?q=recipient({addr})'.format(addr=address)
+    bch_url = blockchair_url + '?q=recipient({addr})'.format(addr=address)
     print(bch_url)
     blockchair_result = requests.get(bch_url).json()
     print(blockchair_result)
-    bal.add_balance('BCH', int(blockchair_result['data'][0]['value']) / coin_config['BCH']['blockchair_units'],
+    bal.add_balance('BCH', int(blockchair_result['data'][0]['value']) / blockchair_units,
                                  'from BCH address {addr}'.format(addr=address))
 print('end blockchair')
 

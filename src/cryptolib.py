@@ -49,6 +49,7 @@ class Config(object):
 
     def __init__(self, path=default_path):
         self.config = json.loads(open(path).read())
+        self.coin_types = self.config['coin_types']
 
     def starting_balances(self):
         return self.config['starting_balances']
@@ -62,12 +63,19 @@ class Config(object):
     def coin_config(self):
         return self.config['coins']
 
+    def links(self):
+        return self.config['links']
+
+    def coin_type(self,coin):
+        if coin in self.coin_types['fiat']:
+            return 'fiat'
+        elif coin in self.coin_types['iconomi_fund']:
+            return 'iconomi_fund'
+        else:
+            return 'crypto'
+
     def resolve_coin(self, coin):
-        c = self.config['coins'].get(coin)
-        if c:
-            if c['type'] == 'link':
-                return c['parent']
-        return coin
+        return self.links().get(coin,coin)
 
 
 class Balances(object):
@@ -88,15 +96,10 @@ class Balances(object):
                         self.coins[coin] = {'balances': []}
                     self.coins[coin]['balances'].append(balance)
 
-    def get_aggregated_balances(self, coin_config):
+    def get_aggregated_balances(self,cfg):
         simple_balances = {"crypto": {}, "fiat": {}, "iconomi_fund": {}}
         for coin, balances in self.coins.items():
-            if coin_config.get(coin):
-                _type = coin_config[coin]['type']
-            else:
-                _type = 'crypto'
-
-            simple_balances[_type][coin] = sum(
+            simple_balances[cfg.coin_type(coin)][coin] = sum(
                 [x['balance'] for x in balances['balances']])
 
         return simple_balances
@@ -107,8 +110,8 @@ class Balances(object):
     def write_balances(self, filename='crypto_balances'):
         write_dictionary_as_json_file(filename, self.coins)
 
-    def write_aggregated_balances(self, coin_config):
-        write_dictionary_as_json_file('crypto_balances_aggregated', self.get_aggregated_balances(coin_config))
+    def write_aggregated_balances(self, cfg):
+        write_dictionary_as_json_file('crypto_balances_aggregated', self.get_aggregated_balances(cfg))
 
     def load_aggregated_balances(self):
         # this doesn't belong here...
@@ -157,16 +160,7 @@ class Valuation(object):
         write_dictionary_as_json_file('../../../../Google Drive/crypto_values', self.valuation())
 
 
-class CoinMarketCap(object):
-    def __init__(self, base_url: str, display_ccy: str):
-        self._base_url = base_url
-        self._display_ccy = display_ccy
 
-    def get_price(self, coin):
-        full_url = self._base_url + coin + '?convert=' + self._display_ccy
-        print(full_url)
-        res = json.loads(urllib.request.urlopen(full_url).read())
-        return res[0]['price_' + self._display_ccy.lower()]
 
 
 def write_dictionary_as_json_file(filename, dictionary, archive=False):

@@ -12,7 +12,7 @@ import cryptolib
 cfg = cryptolib.Config()
 wallet_config = cfg.wallet_config()
 api_config = cfg.api_config()
-coin_config = cfg.coin_config()
+#coin_config = cfg.coin_config()
 
 bal = cryptolib.Balances(cfg.starting_balances())
 
@@ -84,4 +84,4 @@ print('end Bitfinex')
 bal.write_balances()
 
 # simplify balances from detail
-bal.write_aggregated_balances(coin_config)
+bal.write_aggregated_balances(cfg)

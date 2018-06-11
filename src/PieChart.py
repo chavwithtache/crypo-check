@@ -12,7 +12,7 @@ import math
 
 # config
 cfg = cryptolib.Config()
-coin_config = cfg.coin_config()
+links = cfg.links()
 
 
 # lookback_days = 30
@@ -69,14 +69,17 @@ def get_piechart_data_and_diff(root, period='1D'):
     to_file = s_files.iloc[-1]
     to_date = s_files.index[-1]
 
+    rename= links
+
     s_balances_t = get_series_from_data(root + '/' + to_file, 'balances', 'balances_t')
     s_prices_t = get_series_from_data(root + '/' + to_file, 'prices', 'prices_t')
     s_prices_t_1 = get_series_from_data(root + '/' + from_file, 'prices', 'prices_t_1')
-    df = pd.concat([s_balances_t, s_prices_t, s_prices_t_1], axis=1)
-    df['is_iconomi'] = [coin_config[coin]['type'] == 'iconomi_fund' for coin in list(df.index)]
+    df = pd.concat([s_balances_t, s_prices_t, s_prices_t_1.rename(rename)], axis=1)
+    df['is_iconomi'] = [cfg.coin_type(coin) == 'iconomi_fund' for coin in list(df.index)]
     df['value'] = df['balances_t'] * df['prices_t']
     df['value_t1_prices'] = df['balances_t'] * df['prices_t_1']
     df['move_from_prices'] = df['value'] - df['value_t1_prices']
+    df=df.dropna()
     total_value = df['value'].sum(axis=0)
     total_value_str = '{:0,.0f}'.format(total_value)
     # roll up iconomi funds
